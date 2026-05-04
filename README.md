@@ -25,6 +25,4 @@
     Run the app: Execute ./mvnw spring-boot:run.
     Endpoints:POST /api/analise/impacto: Returns a JSON with affected classes and risk levels.
     POST /api/analise/gerar-teste: Generates unit test code for a specific class.
-    The TeamArthur Alves: 
-    Backend Specialist & Java Developer.
-    Front-end & UX Team: Responsible for the React Dashboard and Heatmap visualization.
+    
