@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bob.Trace | AI Impact Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+<nav class="border-b border-slate-800 p-4 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex justify-between items-center">
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
+            <i class="fa-solid fa-microchip"></i> Bob.Trace
+        </h1>
+        <span class="text-xs bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-slate-400">v1.0 - IBM Hackathon</span>
+    </div>
+</nav>
+
+<main class="max-w-6xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- LADO ESQUERDO: INPUT -->
+    <div class="space-y-6">
+        <div class="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-xl">
+            <h2 class="text-lg font-semibold mb-4 text-blue-300"><i class="fa-solid fa-magnifying-glass-chart mr-2"></i> Analisar Novo Componente</h2>
+            <div class="flex gap-2">
+                <input type="text" id="classNameInput" placeholder="Ex: PedidoService"
+                       class="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                <button onclick="realizarAnalise()" class="bg-blue-600 hover:bg-blue-500 px-6 py-2 rounded-lg font-medium transition-colors">Analisar</button>
+            </div>
+        </div>
+
+        <!-- RESULTADO DA ANÁLISE -->
+        <div id="resultCard" class="hidden bg-slate-800/50 p-6 rounded-2xl border border-slate-700 animate-in fade-in duration-500">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold" id="resTarget">--</h3>
+                <span id="resRisk" class="px-3 py-1 rounded-full text-xs font-bold border">--</span>
+            </div>
+
+            <div class="space-y-4">
+                <p class="text-sm text-slate-400 uppercase tracking-widest font-semibold">Classes Afetadas (Ripple Effect)</p>
+                <div id="resClasses" class="flex flex-wrap gap-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- LADO DIREITO: CODE PREVIEW -->
+    <div class="space-y-6">
+        <div class="bg-slate-950 p-6 rounded-2xl border border-slate-800 shadow-2xl h-full min-h-[400px]">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-sm text-slate-500 font-mono"><i class="fa-solid fa-code mr-2"></i> Unit Test Generator</span>
+                <button onclick="copiarCodigo()" class="text-xs text-blue-400 hover:text-blue-300">Copiar</button>
+            </div>
+            <pre id="codeOutput" class="text-sm font-mono text-emerald-400 overflow-x-auto whitespace-pre-wrap italic opacity-50 uppercase">Aguardando análise...</pre>
+        </div>
+    </div>
+</main>
+
+<script>
+    async function realizarAnalise() {
+        const className = document.getElementById('classNameInput').value;
+        if(!className) return alert("Digite o nome da classe!");
+
+        // 1. Chamar Impacto
+        const response = await fetch('/api/analise/impacto', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(className)
+        });
+        const data = await response.json();
+
+        // 2. Chamar Teste
+        const testResponse = await fetch('/api/analise/gerar-teste', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(className)
+        });
+        const testCode = await testResponse.text();
+
+        // Atualizar UI
+        document.getElementById('resultCard').classList.remove('hidden');
+        document.getElementById('resTarget').innerText = data.classeAlvo;
+        document.getElementById('resRisk').innerText = data.riscoTotal;
+
+        // Estilizar Risco
+        const riskBadge = document.getElementById('resRisk');
+        riskBadge.className = `px-3 py-1 rounded-full text-xs font-bold border ${data.riscoTotal === 'ALTO' ? 'border-red-500 text-red-500 bg-red-500/10' : 'border-emerald-500 text-emerald-500 bg-emerald-500/10'}`;
+
+        // Listar Classes
+        const container = document.getElementById('resClasses');
+        container.innerHTML = data.classesAfetadas.map(c => `<span class="bg-slate-700 px-3 py-1 rounded-md text-sm">${c}</span>`).join('');
+
+        // Mostrar Código
+        const codeOutput = document.getElementById('codeOutput');
+        codeOutput.innerText = testCode;
+        codeOutput.classList.remove('italic', 'opacity-50', 'uppercase');
+    }
+
+    function copiarCodigo() {
+        const code = document.getElementById('codeOutput').innerText;
+        navigator.clipboard.writeText(code);
+        alert("Código copiado!");
+    }
+</script>
+</body>
+</html>
